@@ -17,17 +17,23 @@
 
     document.getElementById('loading').style.display = 'block';
 
-    // invoke gpt api
-    const gptResponse = await askGpt(prompt, amount);
-
-    // display questionnaire
-    displayQuestionnaire(gptResponse.choices[0].text);
+    try {
+      // invoke gpt api
+      const gptResponse = await askGpt(prompt, amount);
+      // display questionnaire
+      displayQuestionnaire(gptResponse.choices[0].text);
+    } catch (error) {
+      document.getElementById('gptResults').innerHTML = `<p style="color:red;">Error: ${error.message}</p>`;
+      console.error("Fetch error:", error);
+    } finally {
+      document.getElementById('loading').style.display = 'none';
+    }
   })
 
 
   const buildPrompt = (amount, language, level) => {
     return `
-      Return only JSON.
+      Respond with ONLY valid JSON array. Do not include explanations or markdown formatting.
       Generate ${amount} ${language} interview questions and answers for ${level} level.
       Format:
       [
@@ -75,10 +81,14 @@
       document.getElementById('loading').style.display = 'none';
       return;
     }
-    
+
     const container = document.getElementById('gptResults');
     container.innerHTML = '';
 
+    if (!Array.isArray(data)) {
+      throw new Error("Expected an array of questions, but got something else.");
+    }
+    
     data.forEach(qna => {
       const questionEl = document.createElement('div');
       questionEl.className = 'question';
